@@ -85,7 +85,7 @@ public class DeepboxAttributesFinderFeature implements AttributesFinder, Attribu
     public static final Acl.Role CANMOVEOUTOFBOX = new Acl.Role("canMoveOutOfBox");
 
     /**
-     * Used for preflight checks in {@link DeepboxDeleteFeature} (non-trash).
+     * Used for preflight checks in {@link DeepboxTrashFeature} (non-trash).
      *
      * @see ch.cyberduck.core.deepbox.io.swagger.client.model.NodePolicy#canDelete(Boolean)
      */

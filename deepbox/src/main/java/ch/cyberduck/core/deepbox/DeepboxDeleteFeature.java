@@ -15,88 +15,22 @@ package ch.cyberduck.core.deepbox;
  * GNU General Public License for more details.
  */
 
-import ch.cyberduck.core.Acl;
-import ch.cyberduck.core.LocaleFactory;
 import ch.cyberduck.core.PasswordCallback;
 import ch.cyberduck.core.Path;
-import ch.cyberduck.core.deepbox.io.swagger.client.ApiException;
-import ch.cyberduck.core.deepbox.io.swagger.client.api.CoreRestControllerApi;
-import ch.cyberduck.core.exception.AccessDeniedException;
 import ch.cyberduck.core.exception.BackgroundException;
-import ch.cyberduck.core.exception.NotfoundException;
-import ch.cyberduck.core.features.Delete;
 import ch.cyberduck.core.transfer.TransferStatus;
 
-import java.text.MessageFormat;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.UUID;
 
-import static ch.cyberduck.core.deepbox.DeepboxAttributesFinderFeature.CANDELETE;
-import static ch.cyberduck.core.deepbox.DeepboxAttributesFinderFeature.CANPURGE;
-
-public class DeepboxDeleteFeature implements Delete {
-
-    private final DeepboxSession session;
-    private final DeepboxIdProvider fileid;
+public class DeepboxDeleteFeature extends DeepboxTrashFeature {
 
     public DeepboxDeleteFeature(final DeepboxSession session, final DeepboxIdProvider fileid) {
-        this.session = session;
-        this.fileid = fileid;
+        super(session, fileid);
     }
 
     @Override
     public void delete(final Map<Path, TransferStatus> files, final PasswordCallback prompt, final Callback callback) throws BackgroundException {
-        for(Map.Entry<Path, TransferStatus> entry : files.entrySet()) {
-            final Path file = entry.getKey();
-            try {
-                final String fileId = fileid.getFileId(file);
-                if(fileId == null) {
-                    throw new NotfoundException(String.format("Cannot find node id for %s", file.getName()));
-                }
-                final UUID nodeId = UUID.fromString(fileId);
-                callback.delete(file);
-                final CoreRestControllerApi coreApi = new CoreRestControllerApi(session.getClient());
-                final boolean inTrash = new DeepboxPathContainerService().isInTrash(file);
-                // purge if in trash
-                coreApi.deletePurgeNode(nodeId, inTrash);
-                fileid.cache(file, null);
-            }
-            catch(ApiException e) {
-                throw new DeepboxExceptionMappingService(fileid).map("Cannot delete {0}", e, file);
-            }
-        }
-    }
-
-    @Override
-    public EnumSet<Flags> features() {
-        return EnumSet.of(Flags.recursive);
-    }
-
-    @Override
-    public void preflight(Path file) throws BackgroundException {
-        if(file.isRoot() || new DeepboxPathContainerService().isContainer(file)) {
-            throw new AccessDeniedException(MessageFormat.format(LocaleFactory.localizedString("Cannot delete {0}", "Error"), file.getName())).withFile(file);
-        }
-        final Acl acl = file.attributes().getAcl();
-        if(Acl.EMPTY == acl) {
-            // Missing initialization
-            log.warn(String.format("Unknown ACLs on %s", file));
-            return;
-        }
-        if(new DeepboxPathContainerService().isInTrash(file)) {
-            if(!acl.get(new Acl.CanonicalUser()).contains(CANPURGE)) {
-                if(log.isWarnEnabled()) {
-                    log.warn(String.format("ACL %s for %s does not include %s", acl, file, CANPURGE));
-                }
-                throw new AccessDeniedException(MessageFormat.format(LocaleFactory.localizedString("Cannot delete {0}", "Error"), file.getName())).withFile(file);
-            }
-        }
-        else if(!acl.get(new Acl.CanonicalUser()).contains(CANDELETE)) {
-            if(log.isWarnEnabled()) {
-                log.warn(String.format("ACL %s for %s does not include %s", acl, file, CANDELETE));
-            }
-            throw new AccessDeniedException(MessageFormat.format(LocaleFactory.localizedString("Cannot delete {0}", "Error"), file.getName())).withFile(file);
-        }
+        // Purge directly if not yet in trash
+        super.trash(files, prompt, callback, true);
     }
 }

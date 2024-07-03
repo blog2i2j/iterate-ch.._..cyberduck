@@ -59,10 +59,10 @@ public class DeepboxMoveFeature implements Move {
                 if(log.isWarnEnabled()) {
                     log.warn(String.format("Delete file %s to be replaced with %s", renamed, file));
                 }
-                new DeepboxDeleteFeature(session, fileid).delete(Collections.singletonList(renamed), callback, delete);
+                new DeepboxTrashFeature(session, fileid).delete(Collections.singletonList(renamed), callback, delete);
             }
             if(fileid.getFileId(renamed.withAttributes(new PathAttributes())) != null) {
-                new DeepboxDeleteFeature(session, fileid).delete(Collections.singletonList(renamed), callback, delete);
+                new DeepboxTrashFeature(session, fileid).delete(Collections.singletonList(renamed), callback, delete);
             }
 
             final String sourceId = fileid.getFileId(file);

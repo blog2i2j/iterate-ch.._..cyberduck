@@ -38,7 +38,7 @@ import java.util.UUID;
 import static org.junit.Assert.*;
 
 @Category(IntegrationTest.class)
-public class DeepboxDeleteFeatureTest extends AbstractDeepboxTest {
+public class DeepboxTrashFeatureTest extends AbstractDeepboxTest {
 
     @Test
     public void testDeleteFile() throws Exception {
@@ -50,14 +50,14 @@ public class DeepboxDeleteFeatureTest extends AbstractDeepboxTest {
         final String nodeId = new DeepboxAttributesFinderFeature(session, nodeid).find(file).getFileId();
         new CoreRestControllerApi(session.getClient()).getNodeInfo(UUID.fromString(nodeId), null, null, null); // assert no fail
         assertTrue(new DeepboxFindFeature(session, nodeid).find(file));
-        new DeepboxDeleteFeature(session, nodeid).delete(Collections.singletonList(file), new DisabledLoginCallback(), new Delete.DisabledCallback());
+        new DeepboxTrashFeature(session, nodeid).delete(Collections.singletonList(file), new DisabledLoginCallback(), new Delete.DisabledCallback());
         assertFalse(new DeepboxFindFeature(session, nodeid).find(file));
         // file not in trash is deleted but not purged (i.e. moved to the trash)
         final Path fileInTrash = new Path(trash, file.getName(), EnumSet.of(Path.Type.file));
         assertTrue(new DeepboxFindFeature(session, nodeid).find(fileInTrash));
         assertEquals(nodeId, new DeepboxAttributesFinderFeature(session, nodeid).find(fileInTrash).getFileId());
         // file in trash is purged (i.e. deleted permanently)
-        new DeepboxDeleteFeature(session, nodeid).delete(Collections.singletonList(fileInTrash), new DisabledLoginCallback(), new Delete.DisabledCallback());
+        new DeepboxTrashFeature(session, nodeid).delete(Collections.singletonList(fileInTrash), new DisabledLoginCallback(), new Delete.DisabledCallback());
         assertFalse(new DeepboxFindFeature(session, nodeid).find(fileInTrash));
         try {
             new CoreRestControllerApi(session.getClient()).getNodeInfo(UUID.fromString(nodeId), null, null, null);
@@ -81,7 +81,7 @@ public class DeepboxDeleteFeatureTest extends AbstractDeepboxTest {
         final Path file = new Path(subfolderWithContent, new AlphanumericRandomStringService().random(), EnumSet.of(Path.Type.file));
         new DeepboxTouchFeature(session, nodeid).touch(file, new TransferStatus());
         assertTrue(new DeepboxFindFeature(session, nodeid).find(file));
-        new DeepboxDeleteFeature(session, nodeid).delete(Collections.singletonList(folder), new DisabledLoginCallback(), new Delete.DisabledCallback());
+        new DeepboxTrashFeature(session, nodeid).delete(Collections.singletonList(folder), new DisabledLoginCallback(), new Delete.DisabledCallback());
         assertFalse(new DeepboxFindFeature(session, nodeid).find(folder.withAttributes(new PathAttributes())));
         assertFalse(new DeepboxFindFeature(session, nodeid).find(subfolderWithContent.withAttributes(new PathAttributes())));
         assertFalse(new DeepboxFindFeature(session, nodeid).find(file.withAttributes(new PathAttributes())));
@@ -91,7 +91,7 @@ public class DeepboxDeleteFeatureTest extends AbstractDeepboxTest {
         assertEquals(nodeId, new DeepboxAttributesFinderFeature(session, nodeid).find(folderInTrash).getFileId());
         new CoreRestControllerApi(session.getClient()).getNodeInfo(UUID.fromString(nodeId), null, null, null); // assert no fail
         // file in trash is purged (i.e. deleted permanently)
-        new DeepboxDeleteFeature(session, nodeid).delete(Collections.singletonList(folderInTrash), new DisabledLoginCallback(), new Delete.DisabledCallback());
+        new DeepboxTrashFeature(session, nodeid).delete(Collections.singletonList(folderInTrash), new DisabledLoginCallback(), new Delete.DisabledCallback());
         assertFalse(new DeepboxFindFeature(session, nodeid).find(folderInTrash));
         try {
             new CoreRestControllerApi(session.getClient()).getNodeInfo(UUID.fromString(nodeId), null, null, null);
@@ -107,6 +107,6 @@ public class DeepboxDeleteFeatureTest extends AbstractDeepboxTest {
         final DeepboxIdProvider nodeid = (DeepboxIdProvider) session.getFeature(FileIdProvider.class);
         final Path documents = new Path("/ORG 4 - DeepBox Desktop App/Box1/Documents/", EnumSet.of(Path.Type.directory, Path.Type.volume));
         final Path test = new Path(documents, new AlphanumericRandomStringService().random(), EnumSet.of(Path.Type.file));
-        assertThrows(NotfoundException.class, () -> new DeepboxDeleteFeature(session, nodeid).delete(Collections.singletonList(test), new DisabledPasswordCallback(), new Delete.DisabledCallback()));
+        assertThrows(NotfoundException.class, () -> new DeepboxTrashFeature(session, nodeid).delete(Collections.singletonList(test), new DisabledPasswordCallback(), new Delete.DisabledCallback()));
     }
 }

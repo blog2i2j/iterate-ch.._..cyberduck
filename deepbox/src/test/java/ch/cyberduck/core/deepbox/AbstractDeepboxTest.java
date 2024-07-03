@@ -18,6 +18,7 @@ package ch.cyberduck.core.deepbox;
 import ch.cyberduck.core.*;
 import ch.cyberduck.core.exception.BackgroundException;
 import ch.cyberduck.core.features.Delete;
+import ch.cyberduck.core.features.Trash;
 import ch.cyberduck.core.serializer.impl.dd.ProfilePlistReader;
 import ch.cyberduck.core.ssl.DefaultX509KeyManager;
 import ch.cyberduck.core.ssl.DefaultX509TrustManager;
@@ -136,7 +137,7 @@ public class AbstractDeepboxTest extends VaultTest {
             session.getFeature(Delete.class).delete(Collections.singletonList(file), new DisabledLoginCallback(), new Delete.DisabledCallback());
         }
         else {
-            session.getFeature(Delete.class).delete(Collections.singletonList(file), new DisabledLoginCallback(), new Delete.DisabledCallback());
+            session.getFeature(Trash.class).delete(Collections.singletonList(file), new DisabledLoginCallback(), new Delete.DisabledCallback());
             final Path trash = new Path(new DeepboxPathContainerService().getBoxPath(file).withAttributes(new PathAttributes()), PathNormalizer.name(LocaleFactory.localizedString("Trash", "Deepbox")), EnumSet.of(AbstractPath.Type.directory, AbstractPath.Type.volume));
             final Path fileInTrash = new Path(trash, file.getName(), file.getType());
             session.getFeature(Delete.class).delete(Collections.singletonList(fileInTrash), new DisabledLoginCallback(), new Delete.DisabledCallback());

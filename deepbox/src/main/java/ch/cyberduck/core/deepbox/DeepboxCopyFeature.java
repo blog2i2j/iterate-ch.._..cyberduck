@@ -57,10 +57,10 @@ public class DeepboxCopyFeature implements Copy {
                 if(log.isWarnEnabled()) {
                     log.warn(String.format("Delete file %s to be replaced with %s", target, file));
                 }
-                new DeepboxDeleteFeature(session, fileid).delete(Collections.singletonList(target), callback, new Delete.DisabledCallback());
+                new DeepboxTrashFeature(session, fileid).delete(Collections.singletonList(target), callback, new Delete.DisabledCallback());
             }
             if(fileid.getFileId(target.withAttributes(new PathAttributes())) != null) {
-                new DeepboxDeleteFeature(session, fileid).delete(Collections.singletonList(target), callback, new Delete.DisabledCallback());
+                new DeepboxTrashFeature(session, fileid).delete(Collections.singletonList(target), callback, new Delete.DisabledCallback());
             }
             final CoreRestControllerApi core = new CoreRestControllerApi(session.getClient());
             final NodeCopy nodeCopy = new NodeCopy();

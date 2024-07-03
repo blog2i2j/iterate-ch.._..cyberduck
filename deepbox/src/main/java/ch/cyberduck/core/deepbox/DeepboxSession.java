@@ -41,6 +41,7 @@ import ch.cyberduck.core.features.Read;
 import ch.cyberduck.core.features.Restore;
 import ch.cyberduck.core.features.Share;
 import ch.cyberduck.core.features.Touch;
+import ch.cyberduck.core.features.Trash;
 import ch.cyberduck.core.features.Write;
 import ch.cyberduck.core.http.ChainedServiceUnavailableRetryStrategy;
 import ch.cyberduck.core.http.CustomServiceUnavailableRetryStrategy;
@@ -165,6 +166,9 @@ public class DeepboxSession extends HttpSession<DeepboxApiClient> {
         }
         if(type == AttributesFinder.class) {
             return (T) new DeepboxAttributesFinderFeature(this, fileid);
+        }
+        if(type == Trash.class) {
+            return (T) new DeepboxTrashFeature(this, fileid);
         }
         if(type == Delete.class) {
             return (T) new DeepboxDeleteFeature(this, fileid);

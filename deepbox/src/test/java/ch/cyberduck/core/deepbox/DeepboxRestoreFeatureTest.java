@@ -55,7 +55,7 @@ public class DeepboxRestoreFeatureTest extends AbstractDeepboxTest {
         assertTrue(new DeepboxFindFeature(session, fileid).find(test.withAttributes(new PathAttributes())));
         assertFalse(new DeepboxFindFeature(session, fileid).find(testInTrash.withAttributes(new PathAttributes())));
 
-        new DeepboxDeleteFeature(session, fileid).delete(Collections.singletonList(test), new DisabledLoginCallback(), new Delete.DisabledCallback());
+        new DeepboxTrashFeature(session, fileid).delete(Collections.singletonList(test), new DisabledLoginCallback(), new Delete.DisabledCallback());
         assertFalse(new DeepboxFindFeature(session, fileid).find(test.withAttributes(new PathAttributes())));
         assertTrue(new DeepboxFindFeature(session, fileid).find(testInTrash.withAttributes(new PathAttributes())));
         assertEquals(nodeId, new DeepboxAttributesFinderFeature(session, fileid).find(testInTrash.withAttributes(new PathAttributes())).getFileId());
@@ -102,7 +102,7 @@ public class DeepboxRestoreFeatureTest extends AbstractDeepboxTest {
         assertFalse(new DeepboxFindFeature(session, fileid).find(subfolderWithContentInTrash.withAttributes(new PathAttributes())));
         assertFalse(new DeepboxFindFeature(session, fileid).find(fileInTrash.withAttributes(new PathAttributes())));
 
-        new DeepboxDeleteFeature(session, fileid).delete(Collections.singletonList(folder), new DisabledLoginCallback(), new Delete.DisabledCallback());
+        new DeepboxTrashFeature(session, fileid).delete(Collections.singletonList(folder), new DisabledLoginCallback(), new Delete.DisabledCallback());
 
         assertNull(fileid.getFileId(folder.withAttributes(new PathAttributes())));
         assertNull(fileid.getFileId(subfolderWithContent.withAttributes(new PathAttributes())));
