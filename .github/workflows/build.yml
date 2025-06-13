@@ -7,11 +7,14 @@ on:
   pull_request:
 jobs:
   build:
+    permissions:
+      checks: write
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-13, macos-14, ubuntu-latest, windows-latest ]
+        os: [ macos-13, macos-14, macos-15, ubuntu-latest, windows-latest ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 21
@@ -19,10 +22,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+          cache: maven
       - name: Disable Testcontainers for Windows and MacOS
         run: echo "args=-P=no-testcontainers" >> "$GITHUB_ENV"
         shell: bash
-        if: runner.os == 'windows' || runner.os == 'macos' || runner.os == 'macos'
+        if: runner.os == 'windows' || runner.os == 'macos'
       - run: msiexec /i setup\wix\Bonjour64.msi /Quiet /Passive /NoRestart
         if: runner.os == 'windows'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -31,12 +35,10 @@ jobs:
         if: runner.os == 'windows'
         with:
           msbuild-architecture: x64
-      - name: Cache local Maven repository
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
       - name: Build with Maven
         run: mvn --no-transfer-progress verify -DskipITs -DskipSign ${{ env.args }} --batch-mode -Drevision=0
+      - name: Publish Test Report
+        if: ${{ always() }}
+        uses: scacap/action-surefire-report@v1.9.0
+      - name: Submit Dependency Snapshot
+        uses: advanced-security/maven-dependency-submission-action@v5
