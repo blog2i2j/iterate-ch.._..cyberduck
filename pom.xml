@@ -83,14 +83,13 @@
         <argLine />
         <jna-version>5.14.0</jna-version>
         <jersey-version>2.38</jersey-version>
-        <jackson-version>2.14.2</jackson-version>
+        <jackson-version>2.19.0</jackson-version>
         <slf4j-version>1.7.36</slf4j-version>
-        <log4j-version>2.24.3</log4j-version>
-        <bouncycastle-version>1.80</bouncycastle-version>
+        <log4j-version>2.25.0</log4j-version>
+        <bouncycastle-version>1.81</bouncycastle-version>
         <httpclient-version>4.5.14</httpclient-version>
         <google-http-client.version>1.46.3</google-http-client.version>
         <jwt.version>4.5.0</jwt.version>
-        <ikvm-version>8.0.312.b07-8</ikvm-version>
         <java-native-dll>8u312b07</java-native-dll>
         <rococoa-version>0.10.0</rococoa-version>
         <surefire.group.excluded>ch.cyberduck.test.IntegrationTest</surefire.group.excluded>
@@ -250,6 +249,11 @@
                 <version>${jackson-version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>${jackson-version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
                 <version>${jackson-version}</version>
@@ -280,7 +284,7 @@
                 <version>${jackson-version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
+                <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
                 <version>${jackson-version}</version>
             </dependency>
@@ -307,7 +311,7 @@
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>2.2.32</version>
+                <version>2.2.34</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -477,7 +481,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -596,7 +600,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.4.1</version>
+                    <version>3.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -623,7 +627,36 @@
                                 <goal>copy-dependencies</goal>
                             </goals>
                             <configuration>
-                                <outputDirectory>${project.build.directory}</outputDirectory>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                <excludeClassifiers>net472,net8.0</excludeClassifiers>
+                                <includeTypes>dll</includeTypes>
+                                <stripClassifier>true</stripClassifier>
+                                <stripVersion>true</stripVersion>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-dependencies-dll-net472-target</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/lib/net472</outputDirectory>
+                                <classifier>net472</classifier>
+                                <includeTypes>dll</includeTypes>
+                                <stripClassifier>true</stripClassifier>
+                                <stripVersion>true</stripVersion>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-dependencies-dll-net8.0-target</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/lib/net8.0</outputDirectory>
+                                <classifier>net8.0</classifier>
                                 <includeTypes>dll</includeTypes>
                                 <stripClassifier>true</stripClassifier>
                                 <stripVersion>true</stripVersion>
@@ -686,12 +719,12 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.4.44</version>
+                    <version>2.4.46</version>
                 </plugin>
                 <plugin>
                     <groupId>io.swagger.codegen.v3</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>3.0.68</version>
+                    <version>3.0.70</version>
                     <configuration>
                         <configOptions>
                             <sourceFolder>src/main/java</sourceFolder>
@@ -713,7 +746,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <id>enforce-bytecode-version</id>
@@ -934,7 +967,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.7</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -1010,6 +1043,33 @@
             <properties>
                 <configuration>debug</configuration>
             </properties>
+        </profile>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-dependencies-jar-target</id>
+                                    <configuration>
+                                        <prependGroupId>true</prependGroupId>
+                                        <stripVersion>true</stripVersion>
+                                        <includeScope>compile</includeScope>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
     </profiles>
 </project>

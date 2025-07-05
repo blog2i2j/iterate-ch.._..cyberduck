@@ -18,7 +18,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using ch.cyberduck.core;
 using ch.cyberduck.core.exception;
 using ch.cyberduck.core.preferences;
@@ -108,7 +110,6 @@ namespace Ch.Cyberduck.Core
             }
 
             string errorFromChainStatus = GetErrorFromChainStatus(chain, hostName);
-            bool certError = null != errorFromChainStatus;
             bool hostnameMismatch = hostName != null &&
                                     !HostnameVerifier.CheckServerIdentity(certs.get(0) as X509Certificate,
                                         serverCert, hostName);
@@ -127,13 +128,8 @@ namespace Ch.Cyberduck.Core
                 // Force use of ThreadLocal, otherwise we can't persist X.certificate.accept
                 using (DialogPromptCertificateTrustCallback.Register(() =>
                 {
-                    if (certError)
-                    {
-                        AddCertificate(serverCert, StoreName.Root);
-                    }
-
                     PreferencesFactory.get()
-                        .setProperty(hostName + ".certificate.accept", serverCert.Thumbprint);
+                        .setProperty(hostName + ".certificate.accept", GetSha2Thumbprint(serverCert));
                 }))
                 {
                     try
@@ -180,27 +176,23 @@ namespace Ch.Cyberduck.Core
             return (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(certificate.RawData));
         }
 
-        private void AddCertificate(X509Certificate2 cert, StoreName storeName)
-        {
-            Log.debug("Add certificate:" + cert.SubjectName.Name);
-            X509Store store = new X509Store(storeName, StoreLocation.CurrentUser);
-            try
-            {
-                store.Open(OpenFlags.ReadWrite);
-                store.Add(cert);
-            }
-            finally
-            {
-                store.Close();
-            }
-        }
-
         private bool CheckForException(string hostname, X509Certificate2 cert)
         {
             string accCert = PreferencesFactory.get().getProperty(hostname + ".certificate.accept");
             if (Utils.IsNotBlank(accCert))
             {
-                return accCert.Equals(cert.Thumbprint);
+                var sha2 = GetSha2Thumbprint(cert);
+                if (accCert.Equals(sha2))
+                {
+                    return true;
+                }
+                if (accCert.Equals(cert.Thumbprint))
+                {
+                    // Replace legacy SHA-1 thumbprint with SHA-256
+                    PreferencesFactory.get()
+                        .setProperty(hostname + ".certificate.accept", sha2);
+                    return true;
+                }
             }
 
             return false;
@@ -250,6 +242,23 @@ namespace Ch.Cyberduck.Core
             }
 
             return error;
+        }
+
+        public static String GetSha2Thumbprint(X509Certificate2 cert)
+        {
+            byte[] hashBytes;
+            using (var hasher = new SHA256Managed())
+            {
+                hashBytes = hasher.ComputeHash(cert.RawData);
+            }
+
+            StringBuilder builder = new(hashBytes.Length * 2);
+            foreach (ref readonly var hashByte in hashBytes.AsSpan())
+            {
+                builder.Append(hashByte.ToString("x2"));
+            }
+
+            return builder.ToString();
         }
     }
 }
